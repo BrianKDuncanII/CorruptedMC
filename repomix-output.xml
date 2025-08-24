@@ -1,0 +1,306 @@
+This file is a merged representation of a subset of the codebase, containing files not matching ignore patterns, combined into a single document by Repomix.
+The content has been processed where content has been compressed (code blocks are separated by ⋮---- delimiter).
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of a subset of the repository's contents that is considered the most important context.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching these patterns are excluded: README.txt, changelog.txt, LICENSE.txt, gradlew, gradlew.bat, CREDITS.txt, build.gradle, .gitignore, ./run, ./run-data, ./.vscode, ./.gradle, .gitattributes, gradle/wrapper/gradle-wrapper.properties, pack.mcmeta, sounds.json, mods.toml
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Content has been compressed - code blocks are separated by ⋮---- delimiter
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+gradle.properties
+settings.gradle
+src/main/java/com/roesilej/corruptedmc/client/ClientEvents.java
+src/main/java/com/roesilej/corruptedmc/client/CorruptionHudOverlay.java
+src/main/java/com/roesilej/corruptedmc/CorruptedMC.java
+src/main/java/com/roesilej/corruptedmc/corruption/CorruptionData.java
+src/main/resources/META-INF/mods.toml
+src/main/resources/pack.mcmeta
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="gradle.properties">
+# Sets default memory used for gradle commands. Can be overridden by user or command line properties.
+# This is required to provide enough memory for the Minecraft decompilation process.
+org.gradle.jvmargs=-Xmx3G
+org.gradle.daemon=false
+
+
+## Environment Properties
+
+# The Minecraft version must agree with the Forge version to get a valid artifact
+minecraft_version=1.20.1
+# The Minecraft version range can use any release version of Minecraft as bounds.
+# Snapshots, pre-releases, and release candidates are not guaranteed to sort properly
+# as they do not follow standard versioning conventions.
+minecraft_version_range=[1.20.1,1.21)
+# The Forge version must agree with the Minecraft version to get a valid artifact
+forge_version=47.4.0
+# The Forge version range can use any version of Forge as bounds or match the loader version range
+forge_version_range=[47,)
+# The loader version range can only use the major version of Forge/FML as bounds
+loader_version_range=[47,)
+# The mapping channel to use for mappings.
+# The default set of supported mapping channels are ["official", "snapshot", "snapshot_nodoc", "stable", "stable_nodoc"].
+# Additional mapping channels can be registered through the "channelProviders" extension in a Gradle plugin.
+#
+# | Channel   | Version              |                                                                                |
+# |-----------|----------------------|--------------------------------------------------------------------------------|
+# | official  | MCVersion            | Official field/method names from Mojang mapping files                          |
+# | parchment | YYYY.MM.DD-MCVersion | Open community-sourced parameter names and javadocs layered on top of official |
+#
+# You must be aware of the Mojang license when using the 'official' or 'parchment' mappings.
+# See more information here: https://github.com/MinecraftForge/MCPConfig/blob/master/Mojang.md
+#
+# Parchment is an unofficial project maintained by ParchmentMC, separate from Minecraft Forge.
+# Additional setup is needed to use their mappings, see https://parchmentmc.org/docs/getting-started
+mapping_channel=official
+# The mapping version to query from the mapping channel.
+# This must match the format required by the mapping channel.
+mapping_version=1.20.1
+
+
+## Mod Properties
+
+# The unique mod identifier for the mod. Must be lowercase in English locale. Must fit the regex [a-z][a-z0-9_]{1,63}
+# Must match the String constant located in the main mod class annotated with @Mod.
+mod_id=examplemod
+# The human-readable display name for the mod.
+mod_name=Example Mod
+# The license of the mod. Review your options at https://choosealicense.com/. All Rights Reserved is the default.
+mod_license=All Rights Reserved
+# The mod version. See https://semver.org/
+mod_version=1.0.0
+# The group ID for the mod. It is only important when publishing as an artifact to a Maven repository.
+# This should match the base package used for the mod sources.
+# See https://maven.apache.org/guides/mini/guide-naming-conventions.html
+mod_group_id=com.example.examplemod
+# The authors of the mod. This is a simple text string that is used for display purposes in the mod list.
+mod_authors=YourNameHere, OtherNameHere
+# The description of the mod. This is a simple multiline text string that is used for display purposes in the mod list.
+mod_description=Example mod description.\nNewline characters can be used and will be replaced properly.
+</file>
+
+<file path="settings.gradle">
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        maven {
+            name = 'MinecraftForge'
+            url = 'https://maven.minecraftforge.net/'
+        }
+    }
+}
+
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '0.7.0'
+}
+</file>
+
+<file path="src/main/java/com/roesilej/corruptedmc/client/ClientEvents.java">
+public class ClientEvents {
+⋮----
+public static void registerGuiOverlays(RegisterGuiOverlaysEvent event) {
+event.registerAboveAll("corruption", CorruptionHudOverlay.HUD_CORRUPTION);
+⋮----
+public static class ForgeEvents {
+⋮----
+public static void onScreenRender(ScreenEvent.Render.Post event) {
+if (event.getScreen() instanceof TitleScreen) {
+String version = ModList.get().getModContainerById(CorruptedMC.MODID).get().getModInfo().getVersion().toString();
+⋮----
+int screenWidth = event.getScreen().width;
+int y = event.getScreen().height - 22; // 22 pixels from the bottom
+// Corrected line
+int stringWidth = event.getScreen().getMinecraft().font.width(text);
+⋮----
+event.getGuiGraphics().drawString(
+event.getScreen().getMinecraft().font,
+⋮----
+screenWidth - stringWidth - 2, // 2 pixels from the right edge
+⋮----
+0xFFFFFF, // White color
+true // Render with shadow
+</file>
+
+<file path="src/main/java/com/roesilej/corruptedmc/client/CorruptionHudOverlay.java">
+public class CorruptionHudOverlay {
+// For now, we are just displaying text. You could use a texture for a corruption symbol later.
+// private static final ResourceLocation CORRUPTION_ICON = new ResourceLocation("corruptedmc", "textures/gui/corruption.png");
+⋮----
+// For this example, we'll just use a placeholder for the corruption level on the client.
+// In a more advanced mod, you would sync this value from the server to the client.
+int corruptionLevel = 0; // Placeholder value
+⋮----
+// Don't render if the debug screen (F3) is open
+if (!Minecraft.getInstance().options.renderDebug) {
+guiGraphics.drawString(Minecraft.getInstance().font, text, x, y, 0xFFFFFF);
+</file>
+
+<file path="src/main/java/com/roesilej/corruptedmc/CorruptedMC.java">
+public class CorruptedMC {
+⋮----
+private static final Logger LOGGER = LogUtils.getLogger();
+⋮----
+IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+⋮----
+// You can register other things here later, like items, blocks, etc.
+</file>
+
+<file path="src/main/java/com/roesilej/corruptedmc/corruption/CorruptionData.java">
+public class CorruptionData extends SavedData {
+⋮----
+public int getCorruptionLevel() {
+⋮----
+public void setCorruptionLevel(int newLevel) {
+this.corruptionLevel = Math.max(0, newLevel); // Ensure corruption doesn't go below 0
+setDirty(); // Mark this data as needing to be saved
+⋮----
+public void increaseCorruption(int amount) {
+setCorruptionLevel(this.corruptionLevel + amount);
+⋮----
+public static CorruptionData get(Level level) {
+⋮----
+throw new RuntimeException("Don't access saved data from the client!");
+⋮----
+// Get the overworld's data storage
+DimensionDataStorage storage = ((ServerLevel)level.getServer().overworld()).getDataStorage();
+⋮----
+// Get the data, or create it if it doesn't exist
+return storage.computeIfAbsent(CorruptionData::load, CorruptionData::new, "corruptiondata");
+⋮----
+public static CorruptionData load(CompoundTag nbt) {
+CorruptionData data = new CorruptionData();
+data.corruptionLevel = nbt.getInt("corruption_level");
+⋮----
+public CompoundTag save(CompoundTag nbt) {
+nbt.putInt("corruption_level", this.corruptionLevel);
+</file>
+
+<file path="src/main/resources/META-INF/mods.toml">
+# This is an example mods.toml file. It contains the data relating to the loading mods.
+# There are several mandatory fields (#mandatory), and many more that are optional (#optional).
+# The overall format is standard TOML format, v0.5.0.
+# Note that there are a couple of TOML lists in this file.
+# Find more information on toml format here:  https://github.com/toml-lang/toml
+# The name of the mod loader type to load - for regular FML @Mod mods it should be javafml
+modLoader="javafml" #mandatory
+# A version range to match for said mod loader - for regular FML @Mod it will be the forge version
+loaderVersion="${loader_version_range}" #mandatory This is typically bumped every Minecraft version by Forge. See our download page for lists of versions.
+# The license for you mod. This is mandatory metadata and allows for easier comprehension of your redistributive properties.
+# Review your options at https://choosealicense.com/. All rights reserved is the default copyright stance, and is thus the default here.
+license="${mod_license}"
+# A URL to refer people to when problems occur with this mod
+#issueTrackerURL="https://change.me.to.your.issue.tracker.example.invalid/" #optional
+# If your mod is purely client-side and has no multiplayer functionality (be it dedicated servers or Open to LAN),
+# set this to true, and Forge will set the correct displayTest for you and skip loading your mod on dedicated servers.
+#clientSideOnly=true #optional - defaults to false if absent
+# A list of mods - how many allowed here is determined by the individual mod loader
+[[mods]] #mandatory
+# The modid of the mod
+modId="corruptedmc"
+# The version number of the mod
+version="0.1.0" 
+# A display name for the mod
+displayName="Corrupted MC"
+# A URL to query for updates for this mod. See the JSON update specification https://docs.minecraftforge.net/en/latest/misc/updatechecker/
+#updateJSONURL="https://change.me.example.invalid/updates.json" #optional
+# A URL for the "homepage" for this mod, displayed in the mod UI
+#displayURL="https://change.me.to.your.mods.homepage.example.invalid/" #optional
+# A file name (in the root of the mod JAR) containing a logo for display
+#logoFile="examplemod.png" #optional
+# A text field displayed in the mod UI
+#credits="" #optional
+# A text field displayed in the mod UI
+authors="Roesilej"
+# Display Test controls the display for your mod in the server connection screen
+# MATCH_VERSION means that your mod will cause a red X if the versions on client and server differ. This is the default behaviour and should be what you choose if you have server and client elements to your mod.
+# IGNORE_SERVER_VERSION means that your mod will not cause a red X if it's present on the server but not on the client. This is what you should use if you're a server only mod.
+# IGNORE_ALL_VERSION means that your mod will not cause a red X if it's present on the client or the server. This is a special case and should only be used if your mod has no server component.
+# NONE means that no display test is set on your mod. You need to do this yourself, see IExtensionPoint.DisplayTest for more information. You can define any scheme you wish with this value.
+# IMPORTANT NOTE: this is NOT an instruction as to which environments (CLIENT or DEDICATED SERVER) your mod loads on. Your mod should load (and maybe do nothing!) whereever it finds itself.
+#displayTest="MATCH_VERSION" # if nothing is specified, MATCH_VERSION is the default when clientSideOnly=false, otherwise IGNORE_ALL_VERSION when clientSideOnly=true (#optional)
+
+# The description text for the mod (multi line!) (#mandatory)
+description='''
+A mod that corrupts the game over time.
+'''
+# A dependency - use the . to indicate dependency for a specific modid. Dependencies are optional.
+[[dependencies.${mod_id}]] #optional
+    # the modid of the dependency
+    modId="forge" #mandatory
+    # Does this dependency have to exist - if not, ordering below must be specified
+    mandatory=true #mandatory
+    # The version range of the dependency
+    versionRange="${forge_version_range}" #mandatory
+    # An ordering relationship for the dependency - BEFORE or AFTER required if the dependency is not mandatory
+    # BEFORE - This mod is loaded BEFORE the dependency
+    # AFTER - This mod is loaded AFTER the dependency
+    ordering="NONE"
+    # Side this dependency is applied on - BOTH, CLIENT, or SERVER
+    side="BOTH"
+# Here's another dependency
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    mandatory=true
+    # This version range declares a minimum of the current minecraft version up to but not including the next major version
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+# Features are specific properties of the game environment, that you may want to declare you require. This example declares
+# that your mod requires GL version 3.2 or higher. Other features will be added. They are side aware so declaring this won't
+# stop your mod loading on the server for example.
+#[features.${mod_id}]
+#openGLVersion="[3.2,)"
+</file>
+
+<file path="src/main/resources/pack.mcmeta">
+{
+  "pack": {
+    "description": {
+      "text": "${mod_id} resources"
+    },
+    "pack_format": 15
+  }
+}
+</file>
+
+</files>
