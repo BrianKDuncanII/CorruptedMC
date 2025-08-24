@@ -7,19 +7,18 @@ import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.storage.DimensionDataStorage;
 
 public class CorruptionData extends SavedData {
+    private float corruptionLevel = 0.0f;
 
-    private int corruptionLevel = 0;
-
-    public int getCorruptionLevel() {
-        return corruptionLevel;
+    public float getCorruptionLevel() {
+        return this.corruptionLevel;
     }
 
-    public void setCorruptionLevel(int newLevel) {
-        this.corruptionLevel = Math.max(0, newLevel); // Ensure corruption doesn't go below 0
+    public void setCorruptionLevel(float newLevel) {
+        this.corruptionLevel = Math.max(0.0f, newLevel); // Ensure corruption doesn't go below 0
         setDirty(); // Mark this data as needing to be saved
     }
 
-    public void increaseCorruption(int amount) {
+    public void increaseCorruption(float amount) {
         setCorruptionLevel(this.corruptionLevel + amount);
     }
 
@@ -37,13 +36,13 @@ public class CorruptionData extends SavedData {
 
     public static CorruptionData load(CompoundTag nbt) {
         CorruptionData data = new CorruptionData();
-        data.corruptionLevel = nbt.getInt("corruption_level");
+        data.corruptionLevel = nbt.getFloat("corruption_level");
         return data;
     }
 
     @Override
     public CompoundTag save(CompoundTag nbt) {
-        nbt.putInt("corruption_level", this.corruptionLevel);
+        nbt.putFloat("corruption_level", this.corruptionLevel);
         return nbt;
     }
 }
