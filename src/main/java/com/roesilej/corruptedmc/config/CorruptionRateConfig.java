@@ -2,10 +2,10 @@ package com.roesilej.corruptedmc.config;
 
 public class CorruptionRateConfig {
     // This is the default probability of corruption increasing each server tick.
-    public static final float DEFAULT_RATE = 0.0005f;
+    public static final float DEFAULT_RATE = 0.005f;
 
     // This multiplier will be adjusted by our command. It starts at 1 for the default rate.
-    private static float rateMultiplier = 1.0f;
+    private static float rateMultiplier = 2.0f;
 
     /**
      * Sets the multiplier for the corruption rate.
