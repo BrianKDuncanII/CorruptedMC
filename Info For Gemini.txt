@@ -1,0 +1,3 @@
+If you've read this text, please acknowledge it in your response.
+- I'm using Visual Studio Code for this project.
+- When you provide code please provide the entire code, not just snippets or new additions.

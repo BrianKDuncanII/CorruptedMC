@@ -44,17 +44,273 @@ The content is organized as follows:
 
 <directory_structure>
 gradle.properties
+Info For Gemini.txt
 settings.gradle
+src/main/java/com/roesilej/corruptedmc/block/CorruptedBlock.java
+src/main/java/com/roesilej/corruptedmc/blockstates/corrupted_block.json
 src/main/java/com/roesilej/corruptedmc/client/ClientEvents.java
 src/main/java/com/roesilej/corruptedmc/client/CorruptionHudOverlay.java
+src/main/java/com/roesilej/corruptedmc/command/SetCorruptionRateCommand.java
+src/main/java/com/roesilej/corruptedmc/command/TriggerEventCommand.java
+src/main/java/com/roesilej/corruptedmc/config/CorruptionRateConfig.java
 src/main/java/com/roesilej/corruptedmc/CorruptedMC.java
+src/main/java/com/roesilej/corruptedmc/corruption/ClientCorruptionData.java
 src/main/java/com/roesilej/corruptedmc/corruption/CorruptionData.java
+src/main/java/com/roesilej/corruptedmc/event/CorruptionEvents.java
+src/main/java/com/roesilej/corruptedmc/event/ServerEvents.java
+src/main/java/com/roesilej/corruptedmc/init/ModBlocks.java
+src/main/java/com/roesilej/corruptedmc/init/ModItems.java
+src/main/java/com/roesilej/corruptedmc/loot_tables/blocks/corrupted_block.json
+src/main/java/com/roesilej/corruptedmc/models/block/corrupted_block.json
+src/main/java/com/roesilej/corruptedmc/models/item/corrupted_block.json
+src/main/java/com/roesilej/corruptedmc/network/ModMessages.java
+src/main/java/com/roesilej/corruptedmc/network/packet/CorruptionDataSyncS2CPacket.java
 src/main/resources/META-INF/mods.toml
 src/main/resources/pack.mcmeta
 </directory_structure>
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="Info For Gemini.txt">
+If you've read this text, please acknowledge it in your response.
+- I'm using Visual Studio Code for this project.
+- When you provide code please provide the entire code, not just snippets or new additions.
+</file>
+
+<file path="src/main/java/com/roesilej/corruptedmc/block/CorruptedBlock.java">
+public class CorruptedBlock extends Block {
+⋮----
+public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+// This method is called randomly on blocks that have .randomTicks() enabled.
+⋮----
+// Don't do anything on the client
+if (world.isClientSide()) {
+⋮----
+// Chance to spread is 1 in 4 for each random tick
+if (random.nextInt(4) != 0) {
+⋮----
+// Check a 3x3x3 area around the block
+for (int i = 0; i < 4; i++) { // Try to spread a few times
+BlockPos nearbyPos = pos.offset(random.nextInt(3) - 1, random.nextInt(3) - 1, random.nextInt(3) - 1);
+BlockState nearbyState = world.getBlockState(nearbyPos);
+⋮----
+// Check if the nearby block is a valid target for corruption
+if (isValidTarget(nearbyState)) {
+world.setBlock(nearbyPos, ModBlocks.CORRUPTED_BLOCK.get().defaultBlockState(), 3);
+return; // Stop after spreading once
+⋮----
+private boolean isValidTarget(BlockState state) {
+// Define which blocks can be corrupted.
+// Avoid corrupting air, bedrock, or other important blocks.
+return state.is(Blocks.STONE) || state.is(Blocks.DIRT) || state.is(Blocks.GRASS_BLOCK) || state.is(Blocks.ANDESITE) || state.is(Blocks.DIORITE) || state.is(Blocks.GRANITE);
+</file>
+
+<file path="src/main/java/com/roesilej/corruptedmc/blockstates/corrupted_block.json">
+{
+  "variants": {
+    "": { "model": "corruptedmc:block/corrupted_block" }
+  }
+}
+</file>
+
+<file path="src/main/java/com/roesilej/corruptedmc/command/SetCorruptionRateCommand.java">
+public class SetCorruptionRateCommand {
+⋮----
+public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
+// Register the main command literal "corruptionrate"
+dispatcher.register(Commands.literal("corruptionrate")
+// Require operator permission level 2 to use this command
+.requires(source -> source.hasPermission(2))
+⋮----
+// Sub-command: /corruptionrate set <multiplier>
+.then(Commands.literal("set")
+.then(Commands.argument("multiplier", FloatArgumentType.floatArg(0)) // Argument must be a float >= 0
+.executes(context -> {
+float multiplier = FloatArgumentType.getFloat(context, "multiplier");
+CorruptionRateConfig.setRateMultiplier(multiplier);
+// Send feedback to the player who ran the command
+context.getSource().sendSuccess(() -> Component.literal("Corruption rate multiplier set to " + multiplier), true);
+return 1; // Indicates command was successful
+⋮----
+// Sub-command: /corruptionrate get
+.then(Commands.literal("get")
+⋮----
+float multiplier = CorruptionRateConfig.getRateMultiplier();
+⋮----
+context.getSource().sendSuccess(() -> Component.literal("Current corruption rate multiplier is " + multiplier), false);
+</file>
+
+<file path="src/main/java/com/roesilej/corruptedmc/command/TriggerEventCommand.java">
+public class TriggerEventCommand {
+⋮----
+// An array of your event names. Easy to add to later!
+⋮----
+// "another_event", "a_third_event"
+⋮----
+public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
+dispatcher.register(Commands.literal("corruptevent")
+.requires(source -> source.hasPermission(2)) // Operator level 2
+.then(Commands.literal("trigger")
+.then(Commands.argument("eventName", StringArgumentType.string())
+.suggests(TriggerEventCommand::getEventSuggestions) // Adds tab-completion
+.executes(TriggerEventCommand::runEvent))));
+⋮----
+private static int runEvent(CommandContext<CommandSourceStack> context) {
+String eventName = StringArgumentType.getString(context, "eventName");
+CommandSourceStack source = context.getSource();
+⋮----
+switch (eventName.toLowerCase()) {
+⋮----
+success = CorruptionEvents.triggerCorruptionSpreadEvent(source.getLevel());
+⋮----
+// Add more cases here for future events
+// case "another_event":
+//     success = CorruptionEvents.triggerAnotherEvent(source.getLevel());
+//     break;
+⋮----
+source.sendFailure(Component.literal("Unknown event name: '" + eventName + "'"));
+return 0; // Command failed
+⋮----
+source.sendSuccess(() -> Component.literal("Successfully triggered event: '" + eventName + "'"), true);
+return 1; // Command succeeded
+⋮----
+source.sendFailure(Component.literal("Failed to trigger event: '" + eventName + "'. Conditions may not have been met (e.g., no players online or no valid location found)."));
+⋮----
+private static CompletableFuture<Suggestions> getEventSuggestions(CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
+return SharedSuggestionProvider.suggest(CORRUPTION_EVENTS, builder);
+</file>
+
+<file path="src/main/java/com/roesilej/corruptedmc/config/CorruptionRateConfig.java">
+public class CorruptionRateConfig {
+// This is the default probability of corruption increasing each server tick.
+⋮----
+// This multiplier will be adjusted by our command. It starts at 1 for the default rate.
+⋮----
+/**
+     * Sets the multiplier for the corruption rate.
+     * @param multiplier The new multiplier. Value is clamped to be non-negative.
+     */
+public static void setRateMultiplier(float multiplier) {
+// We use Math.max to prevent anyone from setting a negative multiplier.
+CorruptionRateConfig.rateMultiplier = Math.max(0, multiplier);
+⋮----
+/**
+     * Gets the current corruption rate multiplier.
+     * @return The current multiplier.
+     */
+public static float getRateMultiplier() {
+⋮----
+/**
+     * Calculates the effective rate by combining the default rate and the multiplier.
+     * @return The final probability for the corruption tick.
+     */
+public static float getEffectiveRate() {
+</file>
+
+<file path="src/main/java/com/roesilej/corruptedmc/event/CorruptionEvents.java">
+public class CorruptionEvents {
+⋮----
+/**
+     * Attempts to place a single Corrupted Block near a random player in the world.
+     * This is the "block spread" event.
+     * @param world The server world to perform the event in.
+     * @return True if the event succeeded, false otherwise.
+     */
+public static boolean triggerCorruptionSpreadEvent(ServerLevel world) {
+// Pick a random player
+if (world.getServer().getPlayerCount() == 0) return false;
+ServerPlayer player = world.getServer().getPlayerList().getPlayers().get(world.getRandom().nextInt(world.getServer().getPlayerCount()));
+⋮----
+// Try to find a suitable block to corrupt around the player
+for (int i = 0; i < 15; i++) { // Try 15 times to find a spot
+BlockPos targetPos = player.blockPosition().offset(
+world.getRandom().nextInt(20) - 10, // Increased range slightly
+world.getRandom().nextInt(10) - 5,
+world.getRandom().nextInt(20) - 10
+⋮----
+BlockState targetState = world.getBlockState(targetPos);
+// We can reuse the same validation logic from the CorruptedBlock class
+if (targetState.is(Blocks.STONE) || targetState.is(Blocks.DIRT) || targetState.is(Blocks.GRASS_BLOCK)) {
+world.setBlock(targetPos, ModBlocks.CORRUPTED_BLOCK.get().defaultBlockState(), 3);
+// Optional: Notify the server console that the event was triggered
+// CorruptedMC.LOGGER.info("Triggered 'spread' event at: " + targetPos);
+return true; // The event was successful
+⋮----
+return false; // Failed to find a suitable location
+⋮----
+// You can add more public static methods here for future events!
+// public static boolean triggerAnotherEvent(ServerLevel world) { ... }
+</file>
+
+<file path="src/main/java/com/roesilej/corruptedmc/init/ModBlocks.java">
+import net.minecraft.world.level.block.Blocks; // <-- Add this import
+⋮----
+// import net.minecraft.world.level.material.Material; // <-- REMOVE this import
+⋮----
+public class ModBlocks {
+⋮----
+DeferredRegister.create(ForgeRegistries.BLOCKS, CorruptedMC.MODID);
+⋮----
+// Register the new Corrupted Block
+public static final RegistryObject<Block> CORRUPTED_BLOCK = registerBlock("corrupted_block",
+// V-- THIS IS THE CORRECTED LINE --V
+() -> new CorruptedBlock(BlockBehaviour.Properties.copy(Blocks.STONE)
+.strength(2.0f, 6.0f)
+.requiresCorrectToolForDrops()
+.randomTicks())); // This is crucial for spreading!
+⋮----
+// Helper method for registering blocks
+private static <T extends Block> RegistryObject<T> registerBlock(String name, Supplier<T> block) {
+return BLOCKS.register(name, block);
+</file>
+
+<file path="src/main/java/com/roesilej/corruptedmc/init/ModItems.java">
+public class ModItems {
+⋮----
+DeferredRegister.create(ForgeRegistries.ITEMS, CorruptedMC.MODID);
+⋮----
+// Register the BlockItem for our Corrupted Block
+public static final RegistryObject<Item> CORRUPTED_BLOCK_ITEM = ITEMS.register("corrupted_block",
+() -> new BlockItem(ModBlocks.CORRUPTED_BLOCK.get(), new Item.Properties()));
+</file>
+
+<file path="src/main/java/com/roesilej/corruptedmc/loot_tables/blocks/corrupted_block.json">
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "corruptedmc:corrupted_block"
+        }
+      ],
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ]
+    }
+  ]
+}
+</file>
+
+<file path="src/main/java/com/roesilej/corruptedmc/models/block/corrupted_block.json">
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "corruptedmc:block/corrupted_block"
+  }
+}
+</file>
+
+<file path="src/main/java/com/roesilej/corruptedmc/models/item/corrupted_block.json">
+{
+  "parent": "corruptedmc:block/corrupted_block"
+}
+</file>
 
 <file path="gradle.properties">
 # Sets default memory used for gradle commands. Can be overridden by user or command line properties.
@@ -101,21 +357,21 @@ mapping_version=1.20.1
 
 # The unique mod identifier for the mod. Must be lowercase in English locale. Must fit the regex [a-z][a-z0-9_]{1,63}
 # Must match the String constant located in the main mod class annotated with @Mod.
-mod_id=examplemod
+mod_id=corruptedmc
 # The human-readable display name for the mod.
-mod_name=Example Mod
+mod_name=Corrupted MC
 # The license of the mod. Review your options at https://choosealicense.com/. All Rights Reserved is the default.
 mod_license=All Rights Reserved
 # The mod version. See https://semver.org/
-mod_version=1.0.0
+mod_version=0.1.0
 # The group ID for the mod. It is only important when publishing as an artifact to a Maven repository.
 # This should match the base package used for the mod sources.
 # See https://maven.apache.org/guides/mini/guide-naming-conventions.html
-mod_group_id=com.example.examplemod
+mod_group_id=com.roesilej.corruptedmc
 # The authors of the mod. This is a simple text string that is used for display purposes in the mod list.
-mod_authors=YourNameHere, OtherNameHere
+mod_authors=Roesilej
 # The description of the mod. This is a simple multiline text string that is used for display purposes in the mod list.
-mod_description=Example mod description.\nNewline characters can be used and will be replaced properly.
+mod_description=A mod that slowly corrupts the game over time.
 </file>
 
 <file path="settings.gradle">
@@ -135,83 +391,132 @@ plugins {
 </file>
 
 <file path="src/main/java/com/roesilej/corruptedmc/client/ClientEvents.java">
+// This annotation tells Forge to listen for events in this class
+⋮----
 public class ClientEvents {
 ⋮----
-public static void registerGuiOverlays(RegisterGuiOverlaysEvent event) {
-event.registerAboveAll("corruption", CorruptionHudOverlay.HUD_CORRUPTION);
+// This is the new, correct way to register a HUD overlay
 ⋮----
+public static void registerGuiOverlays(final RegisterGuiOverlaysEvent event) {
+event.registerAboveAll("corruption_hud", (gui, guiGraphics, partialTick, screenWidth, screenHeight) -> {
+// We call the render method from our existing overlay class
+CorruptionHudOverlay.render(guiGraphics, screenWidth, screenHeight);
+⋮----
+// --- We can keep your title screen renderer here too ---
+// This part of your code was fine, it just needed to be registered.
+// By placing it in this annotated class, it will be automatically registered by Forge.
 public static class ForgeEvents {
 ⋮----
 public static void onScreenRender(ScreenEvent.Render.Post event) {
 if (event.getScreen() instanceof TitleScreen) {
-String version = ModList.get().getModContainerById(CorruptedMC.MODID).get().getModInfo().getVersion().toString();
-⋮----
+// Your existing code for rendering the version on the title screen
+String text = "Corrupted MC v0.1.0"; // Simplified for this example
 int screenWidth = event.getScreen().width;
-int y = event.getScreen().height - 22; // 22 pixels from the bottom
-// Corrected line
+int y = event.getScreen().height - 22;
 int stringWidth = event.getScreen().getMinecraft().font.width(text);
 ⋮----
 event.getGuiGraphics().drawString(
 event.getScreen().getMinecraft().font,
-⋮----
-screenWidth - stringWidth - 2, // 2 pixels from the right edge
-⋮----
-0xFFFFFF, // White color
-true // Render with shadow
 </file>
 
-<file path="src/main/java/com/roesilej/corruptedmc/client/CorruptionHudOverlay.java">
-public class CorruptionHudOverlay {
-// For now, we are just displaying text. You could use a texture for a corruption symbol later.
-// private static final ResourceLocation CORRUPTION_ICON = new ResourceLocation("corruptedmc", "textures/gui/corruption.png");
+<file path="src/main/java/com/roesilej/corruptedmc/corruption/ClientCorruptionData.java">
+public class ClientCorruptionData {
 ⋮----
-// For this example, we'll just use a placeholder for the corruption level on the client.
-// In a more advanced mod, you would sync this value from the server to the client.
-int corruptionLevel = 0; // Placeholder value
+public static void setCorruptionLevel(float level) {
 ⋮----
-// Don't render if the debug screen (F3) is open
-if (!Minecraft.getInstance().options.renderDebug) {
-guiGraphics.drawString(Minecraft.getInstance().font, text, x, y, 0xFFFFFF);
+public static float getCorruptionLevel() {
 </file>
 
-<file path="src/main/java/com/roesilej/corruptedmc/CorruptedMC.java">
-public class CorruptedMC {
+<file path="src/main/java/com/roesilej/corruptedmc/event/ServerEvents.java">
+public class ServerEvents {
 ⋮----
-private static final Logger LOGGER = LogUtils.getLogger();
+public static void onServerTick(TickEvent.ServerTickEvent event) {
 ⋮----
-IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+ServerLevel overworld = event.getServer().overworld();
+CorruptionData data = CorruptionData.get(overworld);
+float corruptionLevel = data.getCorruptionLevel();
 ⋮----
-// You can register other things here later, like items, blocks, etc.
+// --- 1. Existing Logic: Increase Corruption ---
+if (overworld.getRandom().nextFloat() < CorruptionRateConfig.getEffectiveRate()) {
+data.increaseCorruption(0.01f);
+ModMessages.sendToAll(new CorruptionDataSyncS2CPacket(data.getCorruptionLevel()));
+⋮----
+if (corruptionLevel > 1.0f && overworld.getRandom().nextFloat() < (corruptionLevel / 5000.0f)) {
+triggerCorruptionSpreadEvent(overworld, data);
+⋮----
+public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
+if (event.getEntity() instanceof ServerPlayer player) {
+// Send the current corruption data to the player who just joined
+float corruptionLevel = CorruptionData.get(player.level()).getCorruptionLevel();
+ModMessages.sendToPlayer(new CorruptionDataSyncS2CPacket(corruptionLevel), player);
+⋮----
+/**
+     * This method is called when the server is ready to register commands.
+     */
+⋮----
+public static void onRegisterCommands(RegisterCommandsEvent event) {
+// Register our new command class
+SetCorruptionRateCommand.register(event.getDispatcher());
+TriggerEventCommand.register(event.getDispatcher());
+⋮----
+private static void triggerCorruptionSpreadEvent(ServerLevel world, CorruptionData data) {
+// Pick a random player
+if (world.getServer().getPlayerCount() == 0) return;
+ServerPlayer player = world.getServer().getPlayerList().getPlayers().get(world.getRandom().nextInt(world.getServer().getPlayerCount()));
+⋮----
+// Try to find a suitable block to corrupt around the player
+for (int i = 0; i < 10; i++) { // Try 10 times to find a spot
+BlockPos targetPos = player.blockPosition().offset(
+world.getRandom().nextInt(16) - 8,
+world.getRandom().nextInt(8) - 4,
+world.getRandom().nextInt(16) - 8
+⋮----
+BlockState targetState = world.getBlockState(targetPos);
+// We can reuse the same validation logic from the CorruptedBlock class
+if (targetState.is(Blocks.STONE) || targetState.is(Blocks.DIRT) || targetState.is(Blocks.GRASS_BLOCK)) {
+world.setBlock(targetPos, ModBlocks.CORRUPTED_BLOCK.get().defaultBlockState(), 3);
+return; // Exit after corrupting one block
 </file>
 
-<file path="src/main/java/com/roesilej/corruptedmc/corruption/CorruptionData.java">
-public class CorruptionData extends SavedData {
+<file path="src/main/java/com/roesilej/corruptedmc/network/ModMessages.java">
+public class ModMessages {
 ⋮----
-public int getCorruptionLevel() {
+private static int id() {
 ⋮----
-public void setCorruptionLevel(int newLevel) {
-this.corruptionLevel = Math.max(0, newLevel); // Ensure corruption doesn't go below 0
-setDirty(); // Mark this data as needing to be saved
+public static void register() {
 ⋮----
-public void increaseCorruption(int amount) {
-setCorruptionLevel(this.corruptionLevel + amount);
+.named(new ResourceLocation(CorruptedMC.MODID, "messages"))
+.networkProtocolVersion(() -> "1.0")
+.clientAcceptedVersions(s -> true)
+.serverAcceptedVersions(s -> true)
+.simpleChannel();
 ⋮----
-public static CorruptionData get(Level level) {
+net.messageBuilder(CorruptionDataSyncS2CPacket.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+.decoder(CorruptionDataSyncS2CPacket::new)
+.encoder(CorruptionDataSyncS2CPacket::toBytes)
+.consumerMainThread(CorruptionDataSyncS2CPacket::handle)
+.add();
 ⋮----
-throw new RuntimeException("Don't access saved data from the client!");
+public static <MSG> void sendToAll(MSG message) {
+INSTANCE.send(PacketDistributor.ALL.noArg(), message);
 ⋮----
-// Get the overworld's data storage
-DimensionDataStorage storage = ((ServerLevel)level.getServer().overworld()).getDataStorage();
+public static <MSG> void sendToPlayer(MSG message, ServerPlayer player) {
+INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), message);
+</file>
+
+<file path="src/main/java/com/roesilej/corruptedmc/network/packet/CorruptionDataSyncS2CPacket.java">
+public class CorruptionDataSyncS2CPacket {
 ⋮----
-// Get the data, or create it if it doesn't exist
-return storage.computeIfAbsent(CorruptionData::load, CorruptionData::new, "corruptiondata");
+this.corruptionLevel = buf.readFloat();
 ⋮----
-public static CorruptionData load(CompoundTag nbt) {
-CorruptionData data = new CorruptionData();
-data.corruptionLevel = nbt.getInt("corruption_level");
+public void toBytes(FriendlyByteBuf buf) {
+buf.writeFloat(this.corruptionLevel);
 ⋮----
-public CompoundTag save(CompoundTag nbt) {
-nbt.putInt("corruption_level", this.corruptionLevel);
+public boolean handle(Supplier<NetworkEvent.Context> supplier) {
+NetworkEvent.Context context = supplier.get();
+context.enqueueWork(() -> {
+// We are on the client thread here
+ClientCorruptionData.setCorruptionLevel(this.corruptionLevel);
 </file>
 
 <file path="src/main/resources/META-INF/mods.toml">
@@ -301,6 +606,71 @@ A mod that corrupts the game over time.
     "pack_format": 15
   }
 }
+</file>
+
+<file path="src/main/java/com/roesilej/corruptedmc/client/CorruptionHudOverlay.java">
+public class CorruptionHudOverlay {
+public static void render(GuiGraphics guiGraphics, int screenWidth, int screenHeight) {
+if (!Minecraft.getInstance().options.renderDebug) {
+⋮----
+float corruptionLevel = ClientCorruptionData.getCorruptionLevel();
+String text = "Corruption: " + String.format("%.2f%%", corruptionLevel);
+⋮----
+int stringWidth = Minecraft.getInstance().font.width(text);
+⋮----
+guiGraphics.drawString(Minecraft.getInstance().font, text, centeredX, y, 0xFFFFFF, true);
+</file>
+
+<file path="src/main/java/com/roesilej/corruptedmc/CorruptedMC.java">
+public class CorruptedMC {
+⋮----
+private static final Logger LOGGER = LogUtils.getLogger();
+⋮----
+IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+⋮----
+ModBlocks.BLOCKS.register(modEventBus);
+ModItems.ITEMS.register(modEventBus);
+⋮----
+// Register the commonSetup method for modloading
+modEventBus.addListener(this::commonSetup);
+⋮----
+// Register server-side events like commands and server ticks
+MinecraftForge.EVENT_BUS.register(ServerEvents.class);
+MinecraftForge.EVENT_BUS.register(ClientEvents.ForgeEvents.class);
+⋮----
+private void commonSetup(final FMLCommonSetupEvent event) {
+event.enqueueWork(() -> {
+ModMessages.register();
+</file>
+
+<file path="src/main/java/com/roesilej/corruptedmc/corruption/CorruptionData.java">
+public class CorruptionData extends SavedData {
+⋮----
+public float getCorruptionLevel() {
+⋮----
+public void setCorruptionLevel(float newLevel) {
+this.corruptionLevel = Math.max(0.0f, newLevel); // Ensure corruption doesn't go below 0
+setDirty(); // Mark this data as needing to be saved
+⋮----
+public void increaseCorruption(float amount) {
+setCorruptionLevel(this.corruptionLevel + amount);
+⋮----
+public static CorruptionData get(Level level) {
+⋮----
+throw new RuntimeException("Don't access saved data from the client!");
+⋮----
+// Get the overworld's data storage
+DimensionDataStorage storage = ((ServerLevel)level.getServer().overworld()).getDataStorage();
+⋮----
+// Get the data, or create it if it doesn't exist
+return storage.computeIfAbsent(CorruptionData::load, CorruptionData::new, "corruptiondata");
+⋮----
+public static CorruptionData load(CompoundTag nbt) {
+CorruptionData data = new CorruptionData();
+data.corruptionLevel = nbt.getFloat("corruption_level");
+⋮----
+public CompoundTag save(CompoundTag nbt) {
+nbt.putFloat("corruption_level", this.corruptionLevel);
 </file>
 
 </files>

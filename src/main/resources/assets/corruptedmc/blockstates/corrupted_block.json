@@ -1,0 +1,5 @@
+{
+  "variants": {
+    "": { "model": "corruptedmc:block/corrupted_block" }
+  }
+}
